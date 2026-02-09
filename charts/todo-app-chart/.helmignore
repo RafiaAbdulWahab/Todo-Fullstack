@@ -1,0 +1,48 @@
+# Patterns to ignore when building packages.
+# This field is a glob pattern.
+
+# Common example ignores
+.DS_Store
+#123
+.git
+.gitignore
+.bzr
+.bzrignore
+.hg
+.hgignore
+.svn
+.stack-work
+
+# Build artifacts
+*.o
+*.lo
+*.la
+*.alib
+*.so
+*.dylib
+*.pyc
+*.pyo
+*.rej
+*.bak
+*.swp
+._*
+.nfs*
+*.log
+*.sql
+*.sqlite
+.terraform
+*.tfstate
+*.tfvars
+*.tfplan
+
+# Editors and IDEs
+.vscode/
+.idea/
+*.sublime-*
+*.code-workspace
+
+# Dependency directories
+node_modules/
+vendor/
+
+# Any other files that are generated and not part of the source

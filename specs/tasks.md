@@ -19,7 +19,7 @@ This document provides a detailed checklist for implementing the AI Chatbot func
     *   **Command**: `uv pip install python-dotenv`
 *   **[T-305]**: Install `official-mcp-sdk` (placeholder). (COMPLETE)
     *   **Description**: Install the placeholder for the Official MCP SDK. Replace with actual package name when available.
-    *   **Command**: `uv pip install official-mcp-sdk`
+    *   **Command**: `uv pip install official-mcp_sdk`
 
 ## 2. Database Model Updates
 
@@ -54,7 +54,7 @@ This document provides a detailed checklist for implementing the AI Chatbot func
     *   **Description**: Create a function `delete_task(user_id: str, task_id: int) -> dict` that removes a task from the database.
     *   **File**: `backend/mcp_server.py`
 *   **[T-315]**: (Optional) Integrate Official MCP SDK within tools. (COMPLETE)
-    *   **Description**: If `official-mcp-sdk` provides specific functionalities, integrate its calls within the `mcp_server.py` tools where appropriate.
+    *   **Description**: If `official-mcp_sdk` provides specific functionalities, integrate its calls within the `mcp_server.py` tools where appropriate.
 
 ## 4. Chat Endpoint Implementation (`POST /api/chat`)
 
@@ -91,3 +91,43 @@ This document provides a detailed checklist for implementing the AI Chatbot func
 *   **[T-325]**: Implement Frontend Chat UI. (Completed)
     *   **Description**: Create `frontend/src/app/chat/page.tsx` with a message input, scrollable history, send button using `fetchWithAuth`, and styling with Tailwind CSS.
     *   **File**: `frontend/src/app/chat/page.tsx`
+
+## 6. Phase 4: Kubernetes Deployment Checklist (100% COMPLETED)
+
+This section provides a detailed checklist for implementing the Kubernetes deployment as outlined in `specs/plan.md` and `specs/phase4-kubernetes.md`.
+
+### 6.1. Dockerization
+
+*   **[T-401]**: Create optimized Dockerfile for the FastAPI backend service. (COMPLETE)
+    *   **Description**: Develop a multi-stage Dockerfile for `backend/` using `python:3.10-slim-buster` for the build stage and a lighter runtime. Include dependency installation via `uv`.
+    *   **Files**: `backend/Dockerfile`
+*   **[T-402]**: Create optimized Dockerfile for the Next.js frontend service. (COMPLETE)
+    *   **Description**: Develop a multi-stage Dockerfile for `frontend/` using `node:20-alpine` for the build stage and `nginx:alpine` or similar for serving.
+    *   **Files**: `frontend/Dockerfile`
+
+### 6.2. Kubernetes Manifests
+
+*   **[T-403]**: Create Kubernetes Deployment and Service manifests for the backend. (COMPLETE)
+    *   **Description**: Define `Deployment` and `Service` YAML files for the FastAPI backend, specifying image, ports, and resource limits.
+    *   **Files**: `kubernetes/backend-deployment.yaml`, `kubernetes/backend-service.yaml`
+*   **[T-404]**: Create Kubernetes Deployment and Service manifests for the frontend. (COMPLETE)
+    *   **Description**: Define `Deployment` and `Service` YAML files for the Next.js frontend, specifying image, ports, and resource limits.
+    *   **Files**: `kubernetes/frontend-deployment.yaml`, `kubernetes/frontend-service.yaml`
+
+### 6.3. Secrets Management
+
+*   **[T-405]**: Create Kubernetes Secret manifests for `DATABASE_URL` and `OPENAI_API_KEY`. (COMPLETE)
+    *   **Description**: Define a `Secret` YAML file to securely store `DATABASE_URL` and `OPENAI_API_KEY`, referencing them in the backend deployment.
+    *   **Files**: `kubernetes/secrets.yaml`
+
+### 6.4. Helm Chart Implementation
+
+*   **[T-406]**: Initialize a Helm Chart for the Todo application. (COMPLETE)
+    *   **Description**: Use `helm create charts/todo-app` to scaffold a new Helm chart.
+    *   **Files**: `charts/todo-app/Chart.yaml`, `charts/todo-app/values.yaml`, etc.
+*   **[T-407]**: Move Kubernetes manifests into the Helm Chart templates. (COMPLETE)
+    *   **Description**: Transfer `backend-deployment.yaml`, `backend-service.yaml`, `frontend-deployment.yaml`, `frontend-service.yaml`, and `secrets.yaml` into `charts/todo-app/templates/`.
+    *   **Files**: `charts/todo-app/templates/*.yaml`
+*   **[T-408]**: Parameterize Helm Chart values. (COMPLETE)
+    *   **Description**: Update `charts/todo-app/values.yaml` and the manifest templates to use Helm variables for image names, tags, replica counts, and secret references.
+    *   **Files**: `charts/todo-app/values.yaml`, `charts/todo-app/templates/*.yaml`

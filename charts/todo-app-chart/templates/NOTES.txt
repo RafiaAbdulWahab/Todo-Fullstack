@@ -1,0 +1,13 @@
+1. Get the application URL by running these commands:
+{{- if eq "NodePort" .Values.frontend.service.type }}
+  export NODE_PORT=$(kubectl get services --namespace {{ .Release.Namespace }} {{ .Release.Name }}-frontend-service -o jsonpath='{.spec.ports[0].nodePort}')
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath='{.items[0].status.addresses[0].address}')
+  echo "Visit http://$NODE_IP:$NODE_PORT"
+{{- else if eq "LoadBalancer" .Values.frontend.service.type }}
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+  You can watch the status of the service by running:
+  kubectl get services --namespace {{ .Release.Namespace }} {{ .Release.Name }}-frontend-service -w
+  Once the LoadBalancer IP is available, visit it in your browser.
+{{- else }}
+  echo "Frontend service is exposed as {{ .Values.frontend.service.type }}. You might need to set up ingress or port-forwarding."
+{{- end }}

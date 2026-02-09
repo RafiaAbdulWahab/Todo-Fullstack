@@ -1,0 +1,97 @@
+{{/*
+Expand the name of the chart.
+*/}}
+{{- define "todo-app-chart.name" -}}
+{{- default .Chart.Name .Values.nameOverride -}}
+{{- end -}}
+
+{{/*
+Create a default fully qualified app name.
+We truncate this at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
+If release name contains chart name it will be used as a full name.
+*/}}
+{{- define "todo-app-chart.fullname" -}}
+{{- if .Values.fullnameOverride -}}
+{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- if contains $name .Release.Name -}}
+{{- .Release.Name | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Create chart name and version as part of the labels
+*/}}
+{{- define "todo-app-chart.labels" -}}
+helm.sh/chart: {{ include "todo-app-chart.chart" . }}
+{{ include "todo-app-chart.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end -}}
+
+{{/*
+Selector labels
+*/}}
+{{- define "todo-app-chart.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "todo-app-chart.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end -}}
+
+{{/*
+Create the name of the service account to use
+*/}}
+{{- define "todo-app-chart.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create -}}
+    {{- default (include "todo-app-chart.fullname" .) .Values.serviceAccount.name -}}
+{{- else -}}
+    {{- default "default" .Values.serviceAccount.name -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Return the appropriate apiVersion for Ingress
+*/}}
+{{- define "todo-app-chart.ingress.apiVersion" -}}
+  {{- if and (.Capabilities.APIVersions.Has "networking.k8s.io/v1") (semverCompare ">=1.19-0" .Capabilities.KubeVersion.Version) -}}
+      {{- print "networking.k8s.io/v1" -}}
+  {{- else if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" -}}
+      {{- print "networking.k8s.io/v1beta1" -}}
+  {{- else -}}
+      {{- print "extensions/v1beta1" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+Return the appropriate apiVersion for networkpolicy
+*/}}
+{{- define "todo-app-chart.networkPolicy.apiVersion" -}}
+  {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1" -}}
+      {{- print "networking.k8s.io/v1" -}}
+  {{- else -}}
+      {{- print "extensions/v1beta1" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+Return the appropriate apiVersion for PodDisruptionBudget
+*/}}
+{{- define "todo-app-chart.podDisruptionBudget.apiVersion" -}}
+  {{- if .Capabilities.APIVersions.Has "policy/v1" -}}
+      {{- print "policy/v1" -}}
+  {{- else -}}
+      {{- print "policy/v1beta1" -}}
+  {{- end -}}
+{{- end -}}
+
+{{/*
+Common labels
+*/}}
+{{- define "todo-app-chart.chart" -}}
+{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
+{{- end -}}

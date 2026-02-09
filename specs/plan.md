@@ -43,7 +43,7 @@ This document outlines the technical implementation steps for setting up our mon
 *   **Frontend (Better Auth):**
     *   The "Better Auth" library will be installed and configured in the Next.js application.
     *   It will handle user signup and signin forms, manage the user's authentication state, and store the JWT token securely (e.g., in an HttpOnly cookie).
-*   **Backend (JWT Verification):**
+*   **Backend (JWT Verification):
     *   The FastAPI backend will include a dependency for JWT token verification.
     *   A middleware or dependency injection system will be implemented to protect endpoints by requiring a valid JWT token in the `Authorization` header.
     *   The backend will decode the JWT token to get the user's ID for user isolation.
@@ -197,3 +197,61 @@ This section outlines the technical steps for integrating the AI Chatbot into th
     # from routes.chat import router as chat_router
     # app.include_router(chat_router, prefix="/api")
     ```
+
+## 7. Phase 4: Kubernetes Deployment Plan
+
+This section outlines the technical steps for deploying the Todo application to Kubernetes, using Minikube for local development and Helm Charts for streamlined deployment, based on the `specs/phase4-kubernetes.md` specification.
+
+### 7.1. Optimized Dockerfiles for Backend and Frontend
+
+*   **Action**: Create optimized `Dockerfile`s for both the FastAPI backend and the Next.js frontend services.
+*   **Backend Dockerfile (`backend/Dockerfile`):**
+    *   Use a multi-stage build process for smaller final images.
+    *   `python:3.10-slim-buster` as base for build stage.
+    *   Install `uv` in a build stage to manage Python dependencies.
+    *   Install production dependencies only.
+    *   Copy application code.
+    *   Expose port `8000`.
+    *   Define `CMD` to run `uvicorn`.
+*   **Frontend Dockerfile (`frontend/Dockerfile`):**
+    *   Use a multi-stage build process.
+    *   `node:20-alpine` as base for build stage.
+    *   Install dependencies and build the Next.js application.
+    *   A lightweight server (e.g., `nginx:alpine` or `node:20-alpine` with `serve`) for the final image to serve static assets.
+    *   Copy built Next.js output to the serving stage.
+    *   Expose port `3000`.
+    *   Define `CMD` to start the server.
+
+### 7.2. Building Docker Images and Loading into Minikube
+
+*   **Action**: Build the Docker images for both services and load them into the Minikube environment.
+*   **Commands:**
+    *   Build Backend Image: `docker build -t todo-backend:latest ./backend`
+    *   Build Frontend Image: `docker build -t todo-frontend:latest ./frontend`
+    *   Load into Minikube:
+        *   `minikube image load todo-backend:latest`
+        *   `minikube image load todo-frontend:latest`
+*   **Verification**: Ensure images are available in Minikube's Docker daemon.
+
+### 7.3. Creating Kubernetes Manifests (Deployment, Service, Secrets)
+
+*   **Action**: Write Kubernetes manifest files (YAML) for the backend and frontend.
+*   **Backend Manifests (`kubernetes/backend-deployment.yaml`, `kubernetes/backend-service.yaml`):**
+    *   **Deployment**: Define a `Deployment` for the FastAPI backend, specifying the `todo-backend:latest` image, replica count, and resource requests/limits.
+    *   **Service**: Define a `Service` (e.g., `ClusterIP` or `NodePort`) to expose the backend within the cluster.
+*   **Frontend Manifests (`kubernetes/frontend-deployment.yaml`, `kubernetes/frontend-service.yaml`):**
+    *   **Deployment**: Define a `Deployment` for the Next.js frontend, specifying the `todo-frontend:latest` image, replica count, and resource requests/limits.
+    *   **Service**: Define a `Service` (e.g., `NodePort` or `LoadBalancer` if ingress is configured) to expose the frontend.
+*   **Secrets Manifest (`kubernetes/secrets.yaml`):**
+    *   Create a `Secret` for `DATABASE_URL` and `OPENAI_API_KEY`.
+    *   Ensure these secrets are referenced correctly in the backend deployment.
+
+### 7.4. Initializing a Helm Chart
+
+*   **Action**: Initialize a Helm Chart for the entire Todo application.
+*   **Command**: `helm create charts/todo-app`
+*   **Chart Structure:**
+    *   Move the Kubernetes manifests created in step 7.3 into the `charts/todo-app/templates` directory.
+    *   Parameterize image names, tags, replica counts, and other configurable values in `values.yaml`.
+    *   Update `Chart.yaml` with appropriate metadata.
+*   **Verification**: Ensure the chart can be templated (`helm template charts/todo-app`) and installed locally (`helm install todo-app charts/todo-app`).

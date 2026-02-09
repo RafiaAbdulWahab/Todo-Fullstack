@@ -119,3 +119,26 @@ The AI Chatbot is a testament to sophisticated AI integration, leveraging the po
 *   **AI Chatbot (`/chat`)**: Interact with the AI assistant. Ensure `OPENAI_API_KEY` is correctly set in `backend/.env`.
 
 ---
+
+## Phase 4: Kubernetes Deployment
+
+Our Todo application is now containerized and managed via Helm, leveraging a robust and scalable architecture designed for efficient development, deployment, and management.
+
+**Containerization:**
+Both the FastAPI backend and the Next.js frontend are containerized using optimized multi-stage Dockerfiles. The backend utilizes `python:3.12-slim` for a lightweight and secure Python environment, while the frontend employs `node:20-alpine` for efficient Node.js execution, resulting in smaller image sizes and faster deployments.
+
+**Kubernetes Deployment:**
+The application's components are orchestrated within Kubernetes using distinct `Deployment` and `Service` resources:
+-   **FastAPI Backend:** Deployed as a `Deployment` with a `ClusterIP` Service, ensuring internal cluster accessibility. The backend handles API logic and database interactions.
+-   **Next.js Frontend:** Deployed as a `Deployment` with a `NodePort` Service, making the user interface accessible from outside the Kubernetes cluster for client interaction.
+
+**Secure Configuration with Kubernetes Secrets:**
+Sensitive configuration data, such as `DATABASE_URL` and `OPENAI_API_KEY`, are securely managed using Kubernetes `Secret` objects. These secrets are injected as environment variables into the respective application pods, adhering to best practices for handling confidential information.
+
+**Streamlined Deployment with Helm:**
+Deployment and management of the entire application stack are significantly simplified through the use of Helm charts. A dedicated Helm chart (`todo-app-chart`) encapsulates all Kubernetes manifests (Deployments, Services, and Secrets) as templates. This approach enables:
+-   **Version Control:** Easy tracking and rollback of application versions.
+-   **Customization:** Flexible configuration through `values.yaml` for different environments (e.g., development, staging, production).
+-   **Automated Rollouts:** One-command deployments and updates, reducing manual errors and accelerating release cycles.
+
+This Kubernetes architecture ensures high availability, scalability, and maintainability for our Todo application, providing a solid foundation for future enhancements and operations.
