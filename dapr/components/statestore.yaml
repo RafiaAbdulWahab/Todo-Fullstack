@@ -1,0 +1,17 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: statestore
+  namespace: default
+spec:
+  type: state.redis
+  version: v1
+  metadata:
+  - name: redisHost
+    value: "localhost:6379" # Placeholder for local Redis, will be updated for DOKS
+  - name: redisPassword
+    secretKeyRef:
+      name: redis-secret
+      key: redis-password
+auth:
+  secretStore: kubernetes # Or your secret store, e.g. digitalocean-secrets

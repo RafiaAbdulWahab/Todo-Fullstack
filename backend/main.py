@@ -8,6 +8,9 @@ from routes.tasks import router as tasks_router
 from routes.chat import router as chat_router
 
 
+from dapr.clients import DaprClient
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -19,6 +22,8 @@ async def lifespan(app: FastAPI):
     print("Tables created!")
     yield
 
+
+dapr_client = DaprClient()
 
 app = FastAPI(lifespan=lifespan)
 

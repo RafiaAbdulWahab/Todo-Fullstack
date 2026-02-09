@@ -13,6 +13,10 @@ spec:
     metadata:
       labels:
         app: {{ .Release.Name }}-frontend
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "{{ .Release.Name }}-frontend"
+        dapr.io/app-port: "{{ .Values.frontend.service.port }}"
     spec:
       containers:
         - name: frontend

@@ -200,14 +200,14 @@ This section outlines the technical steps for integrating the AI Chatbot into th
 
 ## 7. Phase 4: Kubernetes Deployment Plan
 
-This section outlines the technical steps for deploying the Todo application to Kubernetes, using Minikube for local development and Helm Charts for streamlined deployment, based on the `specs/phase4-kubernetes.md` specification.
+This section outlines the technical steps for deploying the Todo application to Kubernetes, using Minikube for local development and Helm Charts for streamlined deployment, based on the `specs/plan.md` and `specs/phase4-kubernetes.md` specification.
 
 ### 7.1. Optimized Dockerfiles for Backend and Frontend
 
 *   **Action**: Create optimized `Dockerfile`s for both the FastAPI backend and the Next.js frontend services.
 *   **Backend Dockerfile (`backend/Dockerfile`):**
     *   Use a multi-stage build process for smaller final images.
-    *   `python:3.10-slim-buster` as base for build stage.
+    *   `python:3.10-slim-buster` for the build stage.
     *   Install `uv` in a build stage to manage Python dependencies.
     *   Install production dependencies only.
     *   Copy application code.
@@ -255,3 +255,98 @@ This section outlines the technical steps for deploying the Todo application to 
     *   Parameterize image names, tags, replica counts, and other configurable values in `values.yaml`.
     *   Update `Chart.yaml` with appropriate metadata.
 *   **Verification**: Ensure the chart can be templated (`helm template charts/todo-app`) and installed locally (`helm install todo-app charts/todo-app`).
+
+## 8. Phase 5: Advanced Cloud Infrastructure and Event-Driven Architecture Plan
+
+This section details the technical implementation steps for transitioning the Todo application to an advanced cloud environment, integrating event-driven patterns with Kafka and Dapr, and leveraging DigitalOcean Kubernetes (DOKS) features, based on the `specs/phase5-advanced-cloud.md` specification.
+
+### 8.1. Environment Setup
+
+*   **Action**: Install Dapr CLI locally and `confluent-kafka-python` in the backend service.
+*   **Dapr CLI Installation**:
+    *   **Command**: Follow Dapr documentation for installing Dapr CLI on the local machine (e.g., `wget -q https://raw.githubusercontent.com/dapr/cli/master/install/install.sh -O - | /bin/bash` for Linux/macOS, or `choco install daprcli` for Windows).
+    *   **Verification**: `dapr --version`
+*   **Kafka Dependencies (Backend)**:
+    *   **Action**: Install `confluent-kafka-python` in the backend's virtual environment.
+    *   **Command**: `cd backend && .venv/Scripts/activate && uv pip install confluent-kafka-python` (or `pip install confluent-kafka-python`).
+    *   **Verification**: Add a simple Python script to import `confluent_kafka` and run it.
+
+### 8.2. Dapr Configuration
+
+*   **Action**: Create Dapr component YAML files for state stores and pub/sub messaging.
+*   **Directory**: Create a new directory `dapr/components` for Dapr component definitions.
+*   **Pub/Sub Component (`dapr/components/kafka-pubsub.yaml`)**:
+    ```yaml
+    apiVersion: dapr.io/v1alpha1
+    kind: Component
+    metadata:
+      name: todo-pubsub
+      namespace: default # Or your specific namespace
+    spec:
+      type: pubsub.kafka
+      version: v1
+      metadata:
+        - name: brokers
+          value: "kafka-broker-address:9092" # Placeholder for Kafka broker address
+        - name: consumerGroup
+          value: "todo-app-group"
+        - name: authRequired
+          value: "false" # Set to "true" for production with SASL/SSL
+    ```
+*   **State Store Component (`dapr/components/redis-state.yaml` - example)**:
+    ```yaml
+    apiVersion: dapr.io/v1alpha1
+    kind: Component
+    metadata:
+      name: statestore
+      namespace: default
+    spec:
+      type: state.redis
+      version: v1
+      metadata:
+        - name: redisHost
+          value: "redis-master.default.svc.cluster.local:6379" # Placeholder
+        - name: redisPassword
+          secretKeyRef:
+            name: redis-secret
+            key: redis-password
+    ```
+    *(Note: The state store component is illustrative, as the primary state is in PostgreSQL. This would be for Dapr's generic state management if needed for other aspects.)*
+
+### 8.3. Kafka Integration (FastAPI Backend)
+
+*   **Action**: Modify the FastAPI backend to produce task-related events to Kafka and potentially consume them if internal processing is required.
+*   **Event Producer**:
+    *   **Module**: Create a `backend/services/event_publisher.py` module.
+    *   **Logic**: Use Dapr's Pub/Sub building block to publish messages to the `todo-pubsub` component.
+    *   **Integration**: Modify task CRUD endpoints (`add_task`, `complete_task`, `delete_task`) in `backend/routes/tasks.py` to publish corresponding events to the `todo-events` Kafka topic via Dapr.
+*   **Event Consumer (Optional, for internal logic)**:
+    *   **Logic**: Implement a Dapr subscriber in the backend to listen for events on specific topics if the backend needs to react to its own or other services' events. (Less likely for this phase, but documented for completeness).
+
+### 8.4. Cloud Helm Updates
+
+*   **Action**: Modify the existing Helm charts (`charts/todo-app-chart`) to include Dapr sidecar annotations and cloud-specific configurations for DigitalOcean.
+*   **Dapr Sidecar Annotations**:
+    *   **Location**: Add annotations to the `template.metadata.annotations` section of both backend and frontend deployments.
+    *   **Annotations**:
+        ```yaml
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "todo-backend" # or "todo-frontend"
+        dapr.io/app-port: "8000" # or "3000" for frontend
+        dapr.io/config: "dapr-config-name" # If using custom Dapr configuration
+        ```
+*   **Cloud-Specific Configurations**:
+    *   **DigitalOcean Load Balancer**: Ensure the frontend service uses `type: LoadBalancer` to leverage DigitalOcean's managed load balancers.
+    *   **Persistent Volume Claims (PVCs)**: If any service requires persistent storage, define `PersistentVolumeClaim` resources in Helm templates and mount them to pods. (Primarily for databases or specific log storage if not using managed services).
+    *   **Managed Database Integration**: Update connection strings in `secrets.yaml` and `values.yaml` to point to the DigitalOcean Managed PostgreSQL instance.
+
+### 8.5. Cloud Secrets Management
+
+*   **Action**: Plan for handling production API keys and sensitive data securely using DigitalOcean managed secrets or Kubernetes Secrets.
+*   **DigitalOcean Managed Secrets**:
+    *   **Strategy**: Investigate and plan for integrating DigitalOcean's native secrets management. This would involve injecting secrets directly into DOKS pods or referencing them via Kubernetes Secrets synchronized with DigitalOcean Secrets.
+    *   **Migration**: Migrate `DATABASE_URL` and `OPENAI_API_KEY` from current `todo-app-secrets` (Kubernetes Secret) to a DigitalOcean managed secret.
+*   **Kubernetes Secrets (for initial DOKS deployment)**:
+    *   **Mechanism**: Continue using Kubernetes `Secret` objects as defined in `k8s/secrets.yaml` (and templated in Helm) for the initial deployment on DOKS.
+    *   **Enhancement**: Implement stricter access control (RBAC) on these secrets within DOKS.
+*   **Kafka Credentials**: Securely store Kafka connection details and credentials (if applicable) using either Kubernetes Secrets or DigitalOcean Managed Secrets.

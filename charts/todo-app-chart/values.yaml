@@ -17,10 +17,12 @@ frontend:
     repository: todo-frontend
     tag: latest
   service:
-    type: NodePort
+    type: LoadBalancer
     port: 3000
-    nodePort: 30080 # This should match the one in k8s/frontend-deployment.yaml
 
 secrets:
   databaseUrl: placeholder-database-url
   openaiApiKey: placeholder-openai-key
+  kafkaBroker: placeholder-kafka-broker
+  kafkaUsername: placeholder-kafka-username
+  kafkaPassword: placeholder-kafka-password

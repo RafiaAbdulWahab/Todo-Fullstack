@@ -1,0 +1,15 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: todo-pubsub
+  namespace: default # Or your specific namespace
+spec:
+  type: pubsub.kafka
+  version: v1
+  metadata:
+  - name: brokers
+    value: "localhost:9092" # Placeholder for local Kafka, will be updated for DOKS
+  - name: consumerGroup
+    value: "todo-app-group"
+  - name: authRequired
+    value: "false"

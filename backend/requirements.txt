@@ -1,0 +1,8 @@
+fastapi
+sqlmodel
+uvicorn
+openai
+python-dotenv
+
+dapr
+confluent-kafka
